@@ -1,0 +1,285 @@
+services:
+  chirpstack:
+    image: chirpstack/chirpstack:4
+    command: -c /etc/chirpstack
+    restart: unless-stopped
+    volumes:
+      - ./infra/chirpstack:/etc/chirpstack:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mosquitto:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      - MQTT_BROKER_HOST=mosquitto
+      - REDIS_HOST=redis
+      - POSTGRESQL_HOST=postgres
+      - POSTGRESQL_PASSWORD=chirpstack
+    ports:
+      - "8086:8080"
+
+  chirpstack-gateway-bridge:
+    image: chirpstack/chirpstack-gateway-bridge:4
+    restart: unless-stopped
+    ports:
+      - "1700:1700/udp"
+    volumes:
+      - ./infra/chirpstack-gateway-bridge:/etc/chirpstack-gateway-bridge:ro
+    environment:
+      - INTEGRATION__MQTT__EVENT_TOPIC_TEMPLATE=in865/gateway/{{ .GatewayID }}/event/{{ .EventType }}
+      - INTEGRATION__MQTT__STATE_TOPIC_TEMPLATE=in865/gateway/{{ .GatewayID }}/state/{{ .StateType }}
+      - INTEGRATION__MQTT__COMMAND_TOPIC_TEMPLATE=in865/gateway/{{ .GatewayID }}/command/#
+    depends_on:
+      mosquitto:
+        condition: service_healthy
+  
+  chirpstack-rest-api:
+    image: chirpstack/chirpstack-rest-api:4
+    restart: unless-stopped
+    command: --server chirpstack:8080 --bind 0.0.0.0:8090 --insecure
+    ports:
+      - "8096:8090"
+    depends_on:
+      - chirpstack
+
+  postgres:
+    image: postgres:14-alpine
+    restart: unless-stopped
+    volumes:
+      - ./infra/postgres-chirpstack/initdb:/docker-entrypoint-initdb.d:ro
+      - postgresqldata:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=chirpstack
+      - POSTGRES_PASSWORD=chirpstack
+      - POSTGRES_DB=chirpstack
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  timescaledb:
+    image: timescale/timescaledb:latest-pg16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: twin
+      POSTGRES_PASSWORD: ${TWIN_DB_PASSWORD:-twin}
+      POSTGRES_DB: twin
+    volumes:
+      - timescaledata:/var/lib/postgresql/data
+      - ./infra/timescaledb/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  ingest-lorawan:
+    image: twin-telemetry:phase3
+    build:
+      context: ./services/ingest-lorawan
+    command: ["node", "dist/ingest-kafka.js"]
+    restart: unless-stopped
+    environment:
+      MQTT_URL: mqtt://mosquitto:1883
+      MQTT_CLIENT_ID: twin-ingest-lorawan
+      BLE_MQTT_TOPIC: ${BLE_MQTT_TOPIC:-ble/gateway/+/advertisment}
+      BLE_ALLOWED_MACS_JSON: ${BLE_ALLOWED_MACS_JSON:-[]}
+      KAFKA_BROKERS: kafka:9092
+      KAFKA_RAW_TOPIC: telemetry.raw
+      LOG_LEVEL: info
+    depends_on:
+      mosquitto:
+        condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/healthz').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  kafka:
+    image: apache/kafka:3.9.1
+    restart: unless-stopped
+    environment:
+      CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+      KAFKA_NUM_PARTITIONS: 3
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 >/dev/null 2>&1"]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+      start_period: 30s
+
+  kafka-init:
+    image: apache/kafka:3.9.1
+    restart: "no"
+    depends_on:
+      kafka:
+        condition: service_healthy
+    entrypoint: ["/bin/bash", "-ec"]
+    command:
+      - |
+        /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --create --if-not-exists --topic telemetry.raw --partitions 3 --replication-factor 1 --config retention.ms=604800000
+        /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --create --if-not-exists --topic telemetry.normalized --partitions 3 --replication-factor 1 --config retention.ms=604800000
+        /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --create --if-not-exists --topic telemetry.dead-letter --partitions 3 --replication-factor 1 --config retention.ms=2592000000
+
+  normalizer:
+    image: twin-telemetry:phase3
+    build:
+      context: ./services/ingest-lorawan
+    command: ["node", "dist/normalizer-main.js"]
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgres://twin:${TWIN_DB_PASSWORD:-twin}@timescaledb:5432/twin
+      CHIRPSTACK_DATABASE_URL: postgres://chirpstack:chirpstack@postgres:5432/chirpstack
+      KAFKA_BROKERS: kafka:9092
+      KAFKA_RAW_TOPIC: telemetry.raw
+      KAFKA_NORMALIZED_TOPIC: telemetry.normalized
+      KAFKA_DEAD_LETTER_TOPIC: telemetry.dead-letter
+      KAFKA_GROUP_ID: normalizer
+      LORAWAN_DEVICE_ID: ${LORAWAN_DEVICE_ID:-}
+      LORAWAN_DEVICE_EUI: ${LORAWAN_DEVICE_EUI:-}
+      LORAWAN_DEVICE_MODEL: ${LORAWAN_DEVICE_MODEL:-LDS12-LWB}
+      LORAWAN_DEVICE_LOCATION: ${LORAWAN_DEVICE_LOCATION:-}
+      LORAWAN_EXPECTED_INTERVAL_S: ${LORAWAN_EXPECTED_INTERVAL_S:-}
+      LORAWAN_ALLOWED_FIELDS_JSON: ${LORAWAN_ALLOWED_FIELDS_JSON:-[]}
+      LORAWAN_ALLOWED_FIELDS_BY_MODEL_JSON: ${LORAWAN_ALLOWED_FIELDS_BY_MODEL_JSON:-}
+      BLE_ALLOWED_FIELDS_BY_MODEL_JSON: ${BLE_ALLOWED_FIELDS_BY_MODEL_JSON:-}
+      LORAWAN_METRIC_MAP_JSON: ${LORAWAN_METRIC_MAP_JSON:-{}}
+      LOG_LEVEL: info
+    depends_on:
+      timescaledb:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/healthz').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  processor:
+    image: twin-telemetry:phase3
+    build:
+      context: ./services/ingest-lorawan
+    command: ["node", "dist/processor-main.js"]
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgres://twin:${TWIN_DB_PASSWORD:-twin}@timescaledb:5432/twin
+      REDIS_URL: redis://redis:6379
+      KAFKA_BROKERS: kafka:9092
+      KAFKA_NORMALIZED_TOPIC: telemetry.normalized
+      KAFKA_GROUP_ID: processor
+      LOG_LEVEL: info
+    depends_on:
+      timescaledb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/healthz').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  grafana:
+    image: grafana/grafana:11.5.2
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-change-me-before-use}
+      TWIN_DB_PASSWORD: ${TWIN_DB_PASSWORD:-twin}
+    ports:
+      - "127.0.0.1:3001:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./infra/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./infra/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      timescaledb:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1:3000/api/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  battery-dashboard:
+    image: twin-battery-dashboard:phase1
+    build:
+      context: ./services/battery-dashboard
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgres://twin:${TWIN_DB_PASSWORD:-twin}@timescaledb:5432/twin
+      CHIRPSTACK_DATABASE_URL: postgres://chirpstack:chirpstack@postgres:5432/chirpstack
+      CHIRPSTACK_REST_URL: http://chirpstack-rest-api:8090
+      CHIRPSTACK_API_TOKEN: ${CHIRPSTACK_API_TOKEN:-}
+      PORT: 3000
+    ports:
+      - "127.0.0.1:3002:3000"
+    depends_on:
+      timescaledb:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      chirpstack-rest-api:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1:3000/healthz"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: redis-server --save 300 1 --save 60 100 --appendonly no
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mosquitto:
+    image: eclipse-mosquitto:2
+    restart: unless-stopped
+    ports:
+      - "1884:1883"
+    volumes: 
+      - ./infra/mosquitto/config/:/mosquitto/config/:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mosquitto_sub -h 127.0.0.1 -p 1883 -t '$$SYS/broker/version' -C 1 -W 15 >/dev/null 2>&1"]
+      interval: 15s
+      timeout: 20s
+      retries: 5
+
+volumes:
+  postgresqldata:
+  redisdata:
+  timescaledata:
+  grafana-data:
+  kafka-data:

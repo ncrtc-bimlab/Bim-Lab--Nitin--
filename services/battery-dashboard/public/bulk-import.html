@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#132d46">
+    <title>Bulk add LoRaWAN sensors | IoT Digital Twin</title>
+    <style>
+      :root {
+        color-scheme: light;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: #17212b;
+        background: #f3f6fa;
+        font-synthesis: none;
+        text-rendering: optimizeLegibility;
+      }
+      * { box-sizing: border-box; }
+      body { min-width: 0; margin: 0; }
+      .topbar { color: #fff; background: #132d46; }
+      .topbar-inner { display: flex; align-items: center; justify-content: space-between; gap: 16px; width: min(100%, 1200px); margin: 0 auto; padding: 18px 16px; }
+      .brand { display: flex; align-items: center; gap: 11px; }
+      .brand-mark { display: grid; width: 38px; height: 38px; place-items: center; border: 1px solid #ffffff3b; border-radius: 11px; color: #d7edff; font-weight: 800; }
+      .brand-name { font-size: 14px; font-weight: 700; }
+      .brand-caption { margin-top: 3px; color: #bfd0df; font-size: 12px; }
+      .back-link { color: #d7edff; font-size: 13px; font-weight: 650; text-decoration: none; }
+      main { width: min(100%, 900px); margin: 0 auto; padding: 24px 16px 48px; }
+      .breadcrumb { margin: 0 0 16px; color: #718296; font-size: 12px; }
+      .breadcrumb a { color: #356a9e; text-decoration: none; }
+      h1 { margin: 0; font-size: clamp(24px, 5vw, 32px); }
+      .intro { margin: 8px 0 22px; color: #687b8f; font-size: 14px; line-height: 1.55; }
+      .panel { overflow: hidden; border: 1px solid #e0e7ef; border-radius: 12px; background: #fff; box-shadow: 0 3px 12px #20354a0a; }
+      .step { padding: 20px; border-bottom: 1px solid #e8edf2; }
+      .step:last-child { border-bottom: 0; }
+      .step-heading { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 14px; }
+      .step-number { display: grid; flex: 0 0 28px; width: 28px; height: 28px; place-items: center; border-radius: 50%; color: #145da0; background: #e2effb; font-size: 13px; font-weight: 750; }
+      h2 { margin: 1px 0 4px; font-size: 16px; }
+      .step-heading p, .hint { margin: 0; color: #718296; font-size: 12px; line-height: 1.5; }
+      .field { display: grid; gap: 7px; max-width: 520px; }
+      label { color: #526579; font-size: 13px; font-weight: 650; }
+      select, input[type="file"], button { width: 100%; min-height: 44px; border: 1px solid #cbd6e1; border-radius: 7px; padding: 9px 12px; color: #17212b; background: #fff; font: inherit; }
+      input[type="file"] { padding: 8px; }
+      button { cursor: pointer; font-weight: 650; }
+      button.primary { border-color: #145da0; color: #fff; background: #145da0; }
+      button.secondary { width: auto; color: #145da0; background: #fff; }
+      button:disabled { cursor: not-allowed; opacity: .58; }
+      button:focus-visible, select:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid #69aef0; outline-offset: 2px; }
+      .file-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 12px; }
+      .file-actions .hint { flex: 1 1 240px; }
+      .notice { margin-top: 14px; border-radius: 8px; padding: 12px 14px; color: #40566b; background: #f3f7fb; font-size: 13px; line-height: 1.5; overflow-wrap: anywhere; }
+      .notice.error { color: #8e3131; background: #fff1f1; }
+      .notice.success { color: #17613f; background: #edf8f2; }
+      .notice:empty { display: none; }
+      .table-wrap { margin-top: 16px; overflow-x: auto; }
+      table { width: 100%; border-collapse: collapse; text-align: left; }
+      th, td { padding: 10px 12px; border-bottom: 1px solid #edf1f5; font-size: 12px; vertical-align: top; }
+      th { color: #607286; background: #f9fbfd; font-size: 10px; letter-spacing: .04em; text-transform: uppercase; }
+      td.errors { min-width: 210px; color: #9b3535; }
+      .import-actions { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-top: 16px; }
+      .import-actions button { width: auto; min-width: 200px; }
+      @media (max-width: 560px) {
+        .topbar-inner { align-items: flex-start; }
+        .brand-caption { display: none; }
+        .back-link { padding-top: 10px; white-space: nowrap; }
+        .step { padding: 16px; }
+        .import-actions { align-items: stretch; flex-direction: column; }
+        .import-actions button { width: 100%; }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="topbar-inner">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">IoT</div>
+          <div><div class="brand-name">IoT Digital Twin</div><div class="brand-caption">Services · LoRaWAN sensor import</div></div>
+        </div>
+        <a class="back-link" href="/">← Sensor dashboard</a>
+      </div>
+    </header>
+    <main>
+      <p class="breadcrumb"><a href="/">Services</a> / Bulk add LoRaWAN sensors</p>
+      <h1>Bulk add LoRaWAN sensors</h1>
+      <p class="intro">Choose the ChirpStack device profile and application, then import sensor details from an Excel workbook. This importer creates LoRaWAN devices only.</p>
+
+      <section class="panel" aria-label="LoRaWAN sensor import steps">
+        <div class="step">
+          <div class="step-heading">
+            <span class="step-number">1</span>
+            <div><h2>Select a device profile</h2><p>Choose the LoRaWAN profile to assign to every sensor in this workbook.</p></div>
+          </div>
+          <div class="field">
+            <label for="profile">Device profile</label>
+            <select id="profile" disabled><option value="">Loading device profiles…</option></select>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-heading">
+            <span class="step-number">2</span>
+            <div><h2>Select an application</h2><p>All imported devices will be created inside this application.</p></div>
+          </div>
+          <div class="field">
+            <label for="application">Application</label>
+            <select id="application" disabled><option value="">Select a device profile first</option></select>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-heading">
+            <span class="step-number">3</span>
+            <div><h2>Upload and review the Excel file</h2><p>Use the import template to keep the required column names and text formatting.</p></div>
+          </div>
+          <div class="field">
+            <label for="workbook">Excel workbook (.xlsx)</label>
+            <input id="workbook" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" disabled>
+          </div>
+          <div class="file-actions">
+            <button id="template" class="secondary" type="button">Download Excel template</button>
+            <p class="hint">Required columns: DevEUI, App Key, Asset ID/Name. JoinEUI and Description are optional. EUIs and keys must be text; App Key is 32 hexadecimal characters. NwkKey is required for LoRaWAN 1.1 profiles.</p>
+          </div>
+          <button id="review" class="primary" type="button" disabled style="margin-top: 16px; max-width: 230px;">Review spreadsheet</button>
+          <div id="message" class="notice" role="status" aria-live="polite"></div>
+          <div id="preview" hidden>
+            <div id="summary" class="notice"></div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Excel row</th><th>Asset ID/Name</th><th>DevEUI</th><th>Validation</th></tr></thead>
+                <tbody id="rows"></tbody>
+              </table>
+            </div>
+            <div class="import-actions">
+              <p class="hint">Review every row before creating devices. App Keys are never displayed in this preview.</p>
+              <button id="import" class="primary" type="button" disabled>Import sensors</button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+    <script>
+      const profileSelect = document.querySelector("#profile");
+      const applicationSelect = document.querySelector("#application");
+      const workbookInput = document.querySelector("#workbook");
+      const reviewButton = document.querySelector("#review");
+      const importButton = document.querySelector("#import");
+      const message = document.querySelector("#message");
+      const preview = document.querySelector("#preview");
+      const rowsBody = document.querySelector("#rows");
+      let previewResult;
+      let busy = false;
+
+      function setMessage(text, kind = "") {
+        message.textContent = text;
+        message.className = `notice${kind ? ` ${kind}` : ""}`;
+      }
+
+      function addOptions(select, items, placeholder) {
+        select.replaceChildren(new Option(placeholder, ""));
+        for (const item of items) select.add(new Option(item.name, item.id));
+      }
+
+      function updateControls() {
+        const selected = Boolean(profileSelect.value && applicationSelect.value);
+        applicationSelect.disabled = !profileSelect.value || busy;
+        workbookInput.disabled = !selected || busy;
+        reviewButton.disabled = !selected || !workbookInput.files.length || busy;
+      }
+
+      async function loadOptions() {
+        try {
+          const response = await fetch("/api/lorawan-import/options", { cache: "no-store" });
+          const result = await response.json();
+          if (!response.ok) throw new Error(result.error ?? `Request failed (${response.status})`);
+          addOptions(profileSelect, result.deviceProfiles, "Select a device profile");
+          profileSelect.dataset.applications = JSON.stringify(result.applications);
+          profileSelect.disabled = result.deviceProfiles.length === 0;
+          if (result.deviceProfiles.length === 0) setMessage("No device profiles were found in ChirpStack.", "error");
+          profileSelect.dispatchEvent(new Event("change"));
+        } catch (error) {
+          profileSelect.replaceChildren(new Option("Could not load profiles", ""));
+          setMessage(`Could not load ChirpStack device profiles and applications: ${error.message}`, "error");
+        }
+      }
+
+      profileSelect.addEventListener("change", () => {
+        const applications = JSON.parse(profileSelect.dataset.applications ?? "[]");
+        addOptions(applicationSelect, applications, profileSelect.value ? "Select an application" : "Select a device profile first");
+        applicationSelect.disabled = !profileSelect.value || busy;
+        clearPreview();
+        updateControls();
+      });
+
+      applicationSelect.addEventListener("change", () => {
+        clearPreview();
+        updateControls();
+      });
+
+      workbookInput.addEventListener("change", () => {
+        clearPreview();
+        setMessage("");
+        updateControls();
+      });
+
+      function clearPreview() {
+        preview.hidden = true;
+        rowsBody.replaceChildren();
+        previewResult = undefined;
+        importButton.disabled = true;
+      }
+
+      function selectionQuery() {
+        return new URLSearchParams({
+          deviceProfileId: profileSelect.value,
+          applicationId: applicationSelect.value,
+        });
+      }
+
+      async function postWorkbook(path) {
+        const file = workbookInput.files[0];
+        if (!file) throw new Error("Choose an Excel workbook first.");
+        const response = await fetch(`${path}?${selectionQuery()}`, {
+          method: "POST",
+          headers: { "content-type": file.type || "application/octet-stream" },
+          body: file,
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error ?? `Request failed (${response.status})`);
+        return result;
+      }
+
+      reviewButton.addEventListener("click", async () => {
+        busy = true;
+        reviewButton.disabled = true;
+        setMessage("Checking the workbook…");
+        clearPreview();
+        try {
+          previewResult = await postWorkbook("/api/lorawan-import/preview");
+          const validRows = previewResult.rows.filter((row) => row.errors.length === 0);
+          const invalidRows = previewResult.rows.filter((row) => row.errors.length > 0);
+          for (const row of previewResult.rows) {
+            const tr = document.createElement("tr");
+            for (const value of [row.rowNumber, row.assetId || "—", row.devEui || "—"]) {
+              const cell = document.createElement("td");
+              cell.textContent = value;
+              tr.append(cell);
+            }
+            const errorCell = document.createElement("td");
+            errorCell.className = invalidRows.includes(row) ? "errors" : "";
+            errorCell.textContent = row.errors.join(" ") || "Ready";
+            tr.append(errorCell);
+            rowsBody.append(tr);
+          }
+          document.querySelector("#summary").textContent =
+            `${validRows.length} sensor${validRows.length === 1 ? "" : "s"} ready; ${invalidRows.length} row${invalidRows.length === 1 ? "" : "s"} need attention.`;
+          importButton.textContent = `Import ${validRows.length} sensor${validRows.length === 1 ? "" : "s"}`;
+          importButton.disabled = validRows.length === 0 || invalidRows.length > 0;
+          preview.hidden = false;
+          setMessage(invalidRows.length ? "Fix the highlighted spreadsheet rows, then upload and review the workbook again." : "The workbook is ready to import.", invalidRows.length ? "error" : "success");
+        } catch (error) {
+          setMessage(`Could not review the spreadsheet: ${error.message}`, "error");
+        } finally {
+          busy = false;
+          updateControls();
+        }
+      });
+
+      importButton.addEventListener("click", async () => {
+        if (!previewResult || previewResult.invalidCount || !window.confirm(`Create ${previewResult.validCount} LoRaWAN devices in the selected application?`)) return;
+        busy = true;
+        importButton.disabled = true;
+        reviewButton.disabled = true;
+        setMessage("Creating devices in ChirpStack. Keep this page open until the import finishes.");
+        try {
+          const result = await postWorkbook("/api/lorawan-import/import");
+          const failed = result.results.filter((item) => item.status !== "created");
+          document.querySelector("#summary").textContent =
+            `${result.createdCount} created · ${result.failedCount} failed · ${result.skippedCount} skipped`;
+          rowsBody.replaceChildren();
+          for (const item of result.results) {
+            const tr = document.createElement("tr");
+            for (const value of [item.rowNumber, item.devEui || "—", item.status, item.error ?? ""]) {
+              const cell = document.createElement("td");
+              cell.textContent = value;
+              tr.append(cell);
+            }
+            rowsBody.append(tr);
+          }
+          document.querySelector("thead tr").innerHTML = "<th>Excel row</th><th>DevEUI</th><th>Result</th><th>Details</th>";
+          previewResult = undefined;
+          setMessage(
+            failed.length ? "Import finished with errors. Rows marked failed were not added; correct them and import again." : "All sensors were added to ChirpStack.",
+            failed.length ? "error" : "success",
+          );
+        } catch (error) {
+          setMessage(`Could not import sensors: ${error.message}`, "error");
+        } finally {
+          busy = false;
+          updateControls();
+          importButton.disabled = true;
+        }
+      });
+
+      document.querySelector("#template").addEventListener("click", () => {
+        window.location.href = "/api/lorawan-import/template.xlsx";
+      });
+
+      loadOptions();
+    </script>
+  </body>
+</html>

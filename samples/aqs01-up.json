@@ -1,0 +1,53 @@
+{
+  "deduplicationId": "sanitized-aqs01-sample",
+  "time": "2026-11-06T05:18:27.734735567Z",
+  "deviceInfo": {
+    "tenantName": "ChirpStack",
+    "applicationName": "sample",
+    "deviceProfileName": "AQS-01-L",
+    "deviceName": "sample-aqs01",
+    "devEui": "0123456789abcdef",
+    "deviceClassEnabled": "CLASS_A",
+    "tags": {}
+  },
+  "devAddr": "00000000",
+  "adr": true,
+  "dr": 0,
+  "fCnt": 0,
+  "fPort": 2,
+  "confirmed": false,
+  "data": "DhAJ0QI0JswBwBA=",
+  "object": {
+    "co2": 448,
+    "CO2H_flag": "False",
+    "BatV": 3.6,
+    "air_pressure": 993.2,
+    "TEMPL_flag": "False",
+    "Node_type": "AIS01-LB",
+    "temperature": 25.13,
+    "humidity": 56.4,
+    "CO2L_flag": "False",
+    "TEMPH_flag": "False"
+  },
+  "rxInfo": [
+    {
+      "gatewayId": "0000000000000000",
+      "uplinkId": 1,
+      "rssi": -10,
+      "snr": 12.8,
+      "channel": 2,
+      "crcStatus": "CRC_OK"
+    }
+  ],
+  "txInfo": {
+    "frequency": 865985000,
+    "modulation": {
+      "lora": {
+        "bandwidth": 125000,
+        "spreadingFactor": 12,
+        "codeRate": "CR_4_5"
+      }
+    }
+  },
+  "regionConfigId": "in865"
+}

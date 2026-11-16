@@ -1,0 +1,449 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Sensor battery dashboard</title>
+    <style>
+      :root {
+        color-scheme: light;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: #17212b;
+        background: #f3f6fa;
+        font-synthesis: none;
+        text-rendering: optimizeLegibility;
+      }
+      * { box-sizing: border-box; }
+      body { min-width: 0; margin: 0; }
+      header {
+        display: flex;
+        align-items: stretch;
+        flex-direction: column;
+        gap: 16px;
+        padding: 20px 16px;
+        color: #fff;
+        background: #132d46;
+      }
+      header h1 { margin: 0; font-size: clamp(20px, 5vw, 28px); line-height: 1.2; }
+      header p { margin: 6px 0 0; color: #c7d7e7; font-size: 14px; line-height: 1.45; }
+      .header-actions { display: flex; flex-direction: column; gap: 8px; }
+      .services-link { display: inline-flex; min-height: 44px; align-items: center; justify-content: center; border: 1px solid #ffffff3b; border-radius: 7px; padding: 9px 12px; color: #fff; font-size: 13px; font-weight: 650; text-decoration: none; }
+      .services-link:hover { background: #ffffff1b; }
+      main { width: min(100%, 1480px); margin: 18px auto; padding: 0 12px 28px; }
+      .summary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-bottom: 16px; }
+      .card, .panel { border: 1px solid #e0e7ef; border-radius: 12px; background: #fff; box-shadow: 0 3px 12px #20354a0a; }
+      .card { min-width: 0; padding: 14px; }
+      .card span { display: block; color: #627386; font-size: 12px; line-height: 1.35; }
+      .card strong { display: block; margin-top: 7px; font-size: clamp(22px, 6vw, 28px); }
+      .panel { overflow: hidden; }
+      .toolbar { display: grid; gap: 12px; padding: 14px; border-bottom: 1px solid #e8edf2; }
+      .field { display: grid; gap: 6px; min-width: 0; }
+      label { color: #526579; font-size: 13px; font-weight: 600; }
+      select, input, button { width: 100%; min-width: 0; min-height: 44px; border: 1px solid #cbd6e1; border-radius: 7px; background: #fff; padding: 9px 12px; color: #17212b; font: inherit; }
+      button { cursor: pointer; font-weight: 650; }
+      button.primary { border-color: #145da0; color: #fff; background: #145da0; }
+      button:disabled { cursor: wait; opacity: .65; }
+      button:focus-visible, select:focus-visible, input:focus-visible { outline: 3px solid #69aef0; outline-offset: 2px; }
+      .hint { margin: 14px; color: #697b8e; font-size: 13px; line-height: 1.55; overflow-wrap: anywhere; }
+      .table-wrap { width: 100%; }
+      table { width: 100%; border-collapse: collapse; text-align: left; }
+      thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; clip-path: inset(50%); }
+      tbody { display: grid; gap: 10px; padding: 0 12px 12px; }
+      tbody tr { display: block; min-width: 0; overflow: hidden; border: 1px solid #e2e9f0; border-radius: 9px; background: #fff; }
+      th, td { padding: 10px 12px; border-bottom: 1px solid #edf1f5; }
+      td { display: grid; grid-template-columns: minmax(106px, 38%) minmax(0, 1fr); align-items: start; gap: 10px; white-space: normal; font-size: 13px; line-height: 1.4; overflow-wrap: anywhere; }
+      td::before { content: attr(data-label); color: #607286; font-size: 11px; font-weight: 650; letter-spacing: .02em; text-transform: uppercase; }
+      td:last-child { border-bottom: 0; }
+      td.sensor { font-weight: 650; }
+      .asset-link { color: #145da0; text-decoration: none; }
+      .asset-link:hover { text-decoration: underline; }
+      .asset-link:focus-visible { border-radius: 3px; }
+      .battery { display: flex; align-items: center; gap: 9px; }
+      .battery-info { display: grid; gap: 5px; min-width: 0; }
+      .battery-meta { color: #607286; font-size: 11px; line-height: 1.35; white-space: normal; }
+      .bar { flex: 0 0 70px; width: 70px; height: 8px; overflow: hidden; border-radius: 8px; background: #e8edf2; }
+      .bar span { display: block; height: 100%; background: #26936b; }
+      .bar.low span { background: #d78a1c; }
+      .bar.critical span { background: #d04444; }
+      .status { display: inline-flex; align-items: center; gap: 7px; }
+      .dot { flex: 0 0 8px; width: 8px; height: 8px; border-radius: 50%; background: #26936b; }
+      .status.offline .dot { background: #d04444; }
+      .status.unknown .dot { background: #9aa8b6; }
+      #message { padding: 12px 14px; color: #8e3131; overflow-wrap: anywhere; }
+      #message:empty { display: none; }
+      tr.empty-row { border: 0; background: transparent; }
+      td.empty { display: block; padding: 24px 12px; color: #697b8e; text-align: center; }
+      td.empty::before { content: none; }
+      .pagination { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 14px; border-top: 1px solid #e8edf2; }
+      .pagination-info { color: #607286; font-size: 13px; }
+      .pagination-actions { display: flex; align-items: center; gap: 8px; }
+      .pagination button { width: auto; min-width: 92px; }
+      @media (min-width: 560px) {
+        header { align-items: center; flex-direction: row; justify-content: space-between; padding: 22px 24px; }
+        .header-actions { flex-direction: row; }
+        header #refresh { width: auto; min-width: 150px; }
+        main { margin: 24px auto; padding: 0 20px 36px; }
+        .summary { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 20px; }
+        .card { padding: 16px; }
+        .card span { font-size: 13px; }
+        .toolbar { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 18px; }
+        .toolbar #export { grid-column: 1 / -1; }
+        .hint { margin: 16px 18px; }
+        tbody { gap: 12px; padding: 0 18px 18px; }
+      }
+      @media (min-width: 760px) {
+        header { padding-right: max(28px, calc((100vw - 1400px) / 2)); padding-left: max(28px, calc((100vw - 1400px) / 2)); }
+        main { padding-right: 28px; padding-left: 28px; }
+        .toolbar { grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: end; }
+        .toolbar #export { grid-column: 1 / -1; width: auto; min-width: 220px; }
+        .table-wrap { overflow-x: auto; }
+        table { min-width: 960px; }
+        thead { position: static; width: auto; height: auto; overflow: visible; clip: auto; white-space: normal; clip-path: none; }
+        tbody { display: table-row-group; padding: 0; }
+        tbody tr { display: table-row; overflow: visible; border: 0; border-radius: 0; background: transparent; }
+        th, td { padding: 13px 14px; border-bottom: 1px solid #edf1f5; white-space: nowrap; }
+        th { color: #607286; background: #f9fbfd; font-size: 12px; letter-spacing: .03em; text-transform: uppercase; }
+        td { display: table-cell; font-size: 14px; line-height: normal; }
+        td::before { content: none; }
+        tr.empty-row { display: table-row; }
+        td.empty { display: table-cell; padding: 28px; }
+        td.empty::before { content: none; }
+      }
+      @media (min-width: 1200px) {
+        .card { padding: 20px; }
+        .toolbar { gap: 16px; padding: 20px; }
+        .toolbar { grid-template-columns: repeat(5, minmax(0, 1fr)) auto; }
+        .toolbar #export { grid-column: auto; }
+        th, td { padding-right: 16px; padding-left: 16px; }
+      }
+      @media (min-width: 1600px) {
+        :root { font-size: 17px; }
+        header { padding: 26px clamp(40px, 3vw, 88px); }
+        header h1 { font-size: 36px; }
+        header p { font-size: 17px; }
+        header #refresh { min-height: 50px; padding: 12px 20px; font-size: 16px; }
+        main { width: min(100%, 3200px); margin: 34px auto; padding: 0 clamp(40px, 3vw, 88px) 64px; }
+        .summary { gap: 18px; margin-bottom: 26px; }
+        .card { padding: 24px 26px; border-radius: 14px; }
+        .card span { font-size: 16px; }
+        .card strong { margin-top: 10px; font-size: 36px; }
+        .panel { border-radius: 14px; }
+        .toolbar { gap: 20px; padding: 24px; }
+        .field { gap: 8px; }
+        label { font-size: 15px; }
+        select, input, button { min-height: 50px; padding: 11px 16px; font-size: 16px; }
+        .toolbar #export { min-width: 270px; }
+        .hint { margin: 20px 24px; font-size: 15px; }
+        table { min-width: 100%; }
+        th, td { padding: 18px 20px; }
+        th { font-size: 13px; }
+        td { font-size: 16px; }
+        .bar { flex-basis: 90px; width: 90px; height: 10px; }
+        .dot { flex-basis: 10px; width: 10px; height: 10px; }
+      }
+      @media (min-width: 2800px) {
+        :root { font-size: 18px; }
+        header h1 { font-size: 40px; }
+        header p { font-size: 18px; }
+        .summary { gap: 22px; }
+        .card { padding: 28px 32px; }
+        .card strong { font-size: 42px; }
+        th, td { padding: 22px 26px; }
+      }
+      @media (prefers-reduced-motion: no-preference) {
+        button, select { transition: border-color 120ms ease, background-color 120ms ease, box-shadow 120ms ease; }
+        button:hover:not(:disabled) { box-shadow: 0 2px 6px #132d4624; }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div>
+        <h1>Sensor battery dashboard</h1>
+        <p>Battery health and sensor response status</p>
+      </div>
+      <div class="header-actions">
+        <a class="services-link" href="/bulk-import">Bulk add LoRaWAN sensors</a>
+        <button id="refresh" type="button">Refresh data</button>
+      </div>
+    </header>
+    <main>
+      <section class="summary" aria-label="Battery summary">
+        <div class="card"><span>Assigned sensors</span><strong id="total">—</strong></div>
+        <div class="card"><span>Below 50%</span><strong id="under50">—</strong></div>
+        <div class="card"><span>Below 20%</span><strong id="under20">—</strong></div>
+        <div class="card"><span>Not answering</span><strong id="offline">—</strong></div>
+      </section>
+      <section class="panel">
+        <div class="toolbar">
+          <div class="field">
+            <label for="protocol-filter">Device type</label>
+            <select id="protocol-filter">
+              <option value="all">All devices</option>
+              <option value="lorawan">LoRaWAN devices</option>
+              <option value="ble">BLE devices</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="battery-filter">Battery status</label>
+            <select id="battery-filter">
+              <option value="all">All sensors</option>
+              <option value="under50">Battery below 50%</option>
+              <option value="under20">Battery below 20%</option>
+              <option value="offline">Not answering (0%)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="connection-filter">Connection status</label>
+            <select id="connection-filter">
+              <option value="all">All connection statuses</option>
+              <option value="online">Online</option>
+              <option value="offline">Not answering</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="sensor-search">Search asset ID or model</label>
+            <input id="sensor-search" type="search" maxlength="100" placeholder="For example, BB004 or LDS-12-LWB">
+          </div>
+          <div class="field">
+            <label for="page-size">Rows per page</label>
+            <select id="page-size">
+              <option value="10">10 per page</option>
+              <option value="20">20 per page</option>
+              <option value="50">50 per page</option>
+            </select>
+          </div>
+          <button id="export" class="primary" type="button">Export filtered Excel file</button>
+        </div>
+        <p class="hint">Battery data is taken from each sensor’s latest report. Percentages use an explicitly named percent/pct metric or an available ChirpStack batteryLevel status; other battery metrics remain raw because units are not assumed. No response for 3× the configured interval (or 24 hours if none is configured) shows 0% and “Not answering.”</p>
+        <div id="message" role="status" aria-live="polite"></div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Assigned Asset Id</th>
+                <th>Protocol</th>
+                <th>Model</th>
+                <th>Description</th>
+                <th>Battery</th>
+                <th>Last saved battery</th>
+                <th>Last response</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="sensors"></tbody>
+          </table>
+        </div>
+        <div class="pagination" aria-label="Sensor table pagination">
+          <span id="page-info" class="pagination-info" aria-live="polite"></span>
+          <div class="pagination-actions">
+            <button id="previous-page" type="button">Previous</button>
+            <button id="next-page" type="button">Next</button>
+          </div>
+        </div>
+      </section>
+    </main>
+    <script>
+      const batteryFilter = document.querySelector("#battery-filter");
+      const protocolFilter = document.querySelector("#protocol-filter");
+      const connectionFilter = document.querySelector("#connection-filter");
+      const searchInput = document.querySelector("#sensor-search");
+      const pageSizeSelect = document.querySelector("#page-size");
+      const tbody = document.querySelector("#sensors");
+      const message = document.querySelector("#message");
+      let sensorRequestSequence = 0;
+      let currentPage = 1;
+      let allSensors = [];
+      let searchTimer;
+      const refreshButton = document.querySelector("#refresh");
+      const exportButton = document.querySelector("#export");
+      function element(tag, text, className) {
+        const node = document.createElement(tag);
+        if (text !== null && text !== undefined) node.textContent = text;
+        if (className) node.className = className;
+        return node;
+      }
+
+      function dateText(value) {
+        if (!value) return "—";
+        const parsed = new Date(value);
+        return Number.isNaN(parsed.getTime()) ? "—" : parsed.toLocaleString();
+      }
+
+      function batteryCell(sensor) {
+        if (sensor.batteryPercent === null) {
+          return element("td", "—");
+        }
+        const cell = element("td");
+        const info = element("div", null, "battery-info");
+        const row = element("div", null, "battery");
+        const bar = element("div", null, `bar${sensor.batteryPercent < 20 ? " critical" : sensor.batteryPercent < 50 ? " low" : ""}`);
+        const fill = element("span");
+        fill.style.width = `${Math.max(0, Math.min(100, sensor.batteryPercent))}%`;
+        bar.append(fill);
+        row.append(bar, element("strong", `${sensor.batteryPercent}%`));
+        info.append(row);
+        if (sensor.batteryValue !== null && sensor.batteryValue !== undefined && sensor.batteryMetric) {
+          const isPercentage = /percent|pct|%/i.test(sensor.batteryMetric);
+          const savedValue = isPercentage
+            ? `${sensor.batteryValue}%`
+            : `${sensor.batteryValue} (${sensor.batteryMetric})`;
+          const savedAt = sensor.batteryTs ? ` · ${dateText(sensor.batteryTs)}` : "";
+          info.append(element("span", `Last saved: ${savedValue}${savedAt}`, "battery-meta"));
+        }
+        cell.append(info);
+        return cell;
+      }
+
+      function drawSensors(sensors) {
+        const pageSize = Number(pageSizeSelect.value);
+        const totalPages = Math.max(1, Math.ceil(sensors.length / pageSize));
+        currentPage = Math.min(currentPage, totalPages);
+        const start = (currentPage - 1) * pageSize;
+        const pageSensors = sensors.slice(start, start + pageSize);
+        const end = Math.min(start + pageSensors.length, sensors.length);
+        document.querySelector("#page-info").textContent = sensors.length
+          ? `Showing ${start + 1}–${end} of ${sensors.length} sensors`
+          : "Showing 0 of 0 sensors";
+        document.querySelector("#previous-page").disabled = currentPage <= 1;
+        document.querySelector("#next-page").disabled = currentPage >= totalPages;
+        tbody.replaceChildren();
+        if (pageSensors.length === 0) {
+          const row = element("tr", null, "empty-row");
+          const cell = element("td", "No sensors match the selected filters and search.", "empty");
+          cell.colSpan = 8;
+          row.append(cell);
+          tbody.append(row);
+          return;
+        }
+
+        for (const sensor of pageSensors) {
+          const row = element("tr");
+          const assetCell = element("td");
+          const assetLink = element("a", sensor.sensorName, "asset-link");
+          assetLink.href = `/sensors/${encodeURIComponent(sensor.deviceId)}`;
+          assetLink.setAttribute("aria-label", `View details for asset ${sensor.sensorName}`);
+          assetCell.append(assetLink);
+          assetCell.classList.add("sensor");
+          assetCell.dataset.label = "Assigned Asset Id";
+          const protocolCell = element("td", sensor.protocol.toUpperCase());
+          protocolCell.dataset.label = "Protocol";
+          const modelCell = element("td", sensor.model ?? "—");
+          modelCell.dataset.label = "Model";
+          const descriptionCell = element("td", sensor.description ?? "—");
+          descriptionCell.dataset.label = "Description";
+          const battery = batteryCell(sensor);
+          battery.dataset.label = "Battery";
+          const isSavedPercentage = /percent|pct|%/i.test(sensor.batteryMetric ?? "");
+          const savedBatteryValue = sensor.batteryMetric === null || sensor.batteryMetric === undefined
+            ? "—"
+            : isSavedPercentage
+              ? `${sensor.batteryValue}%`
+              : `${sensor.batteryValue} (${sensor.batteryMetric})`;
+          const valueCell = element("td", savedBatteryValue);
+          valueCell.dataset.label = "Last saved battery";
+          const lastSeenCell = element("td", dateText(sensor.lastSeen));
+          lastSeenCell.dataset.label = "Last response";
+          row.append(assetCell, protocolCell, modelCell, descriptionCell, battery, valueCell, lastSeenCell);
+          const state = element("span", null, `status${sensor.isOffline ? " offline" : sensor.batteryPercent === null ? " unknown" : ""}`);
+          state.append(element("span", null, "dot"), document.createTextNode(sensor.status));
+          const statusCell = element("td");
+          statusCell.dataset.label = "Status";
+          statusCell.append(state);
+          row.append(statusCell);
+          tbody.append(row);
+        }
+      }
+
+      async function loadSensors() {
+        const requestSequence = ++sensorRequestSequence;
+        refreshButton.disabled = true;
+        message.textContent = "";
+        try {
+          const params = new URLSearchParams({
+            filter: batteryFilter.value,
+            protocol: protocolFilter.value,
+            status: connectionFilter.value,
+            search: searchInput.value.trim(),
+          });
+          const response = await fetch(`/api/sensors?${params}`, { cache: "no-store" });
+          const result = await response.json();
+          if (!response.ok) throw new Error(result.error ?? `Request failed (${response.status})`);
+          if (requestSequence !== sensorRequestSequence) return;
+          document.querySelector("#total").textContent = result.summary.total;
+          document.querySelector("#under50").textContent = result.summary.under50;
+          document.querySelector("#under20").textContent = result.summary.under20;
+          document.querySelector("#offline").textContent = result.summary.offline;
+          allSensors = result.sensors;
+          drawSensors(allSensors);
+        } catch (error) {
+          if (requestSequence === sensorRequestSequence) {
+            message.textContent = `Could not load sensor data: ${error.message}`;
+          }
+        } finally {
+          if (requestSequence === sensorRequestSequence) {
+            refreshButton.disabled = false;
+          }
+        }
+      }
+
+      async function exportWorkbook() {
+        exportButton.disabled = true;
+        message.textContent = "";
+        try {
+          const params = new URLSearchParams({
+            filter: batteryFilter.value,
+            protocol: protocolFilter.value,
+            status: connectionFilter.value,
+            search: searchInput.value.trim(),
+          });
+          const response = await fetch(`/api/export.xlsx?${params}`);
+          if (!response.ok) {
+            const result = await response.json();
+            throw new Error(result.error ?? `Export failed (${response.status})`);
+          }
+          const blob = await response.blob();
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.href = url;
+          link.download = `sensor-battery-${batteryFilter.value}-${protocolFilter.value}-${connectionFilter.value}.xlsx`;
+          link.click();
+          URL.revokeObjectURL(url);
+        } catch (error) {
+          message.textContent = `Could not export Excel file: ${error.message}`;
+        } finally {
+          exportButton.disabled = false;
+        }
+      }
+
+      batteryFilter.addEventListener("change", () => { currentPage = 1; void loadSensors(); });
+      protocolFilter.addEventListener("change", () => { currentPage = 1; void loadSensors(); });
+      connectionFilter.addEventListener("change", () => { currentPage = 1; void loadSensors(); });
+      searchInput.addEventListener("input", () => {
+        window.clearTimeout(searchTimer);
+        searchTimer = window.setTimeout(() => {
+          currentPage = 1;
+          void loadSensors();
+        }, 200);
+      });
+      pageSizeSelect.addEventListener("change", () => {
+        currentPage = 1;
+        drawSensors(allSensors);
+      });
+      document.querySelector("#previous-page").addEventListener("click", () => {
+        currentPage -= 1;
+        drawSensors(allSensors);
+      });
+      document.querySelector("#next-page").addEventListener("click", () => {
+        currentPage += 1;
+        drawSensors(allSensors);
+      });
+      refreshButton.addEventListener("click", loadSensors);
+      exportButton.addEventListener("click", exportWorkbook);
+      loadSensors();
+      window.setInterval(() => {
+        if (!document.hidden) void loadSensors();
+      }, 30_000);
+    </script>
+  </body>
+</html>

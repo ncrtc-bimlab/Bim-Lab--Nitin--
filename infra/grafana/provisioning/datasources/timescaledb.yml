@@ -1,0 +1,18 @@
+apiVersion: 1
+
+datasources:
+  - name: Twin TimescaleDB
+    uid: twin-timescaledb
+    type: postgres
+    access: proxy
+    url: timescaledb:5432
+    user: twin
+    database: twin
+    isDefault: true
+    editable: false
+    jsonData:
+      postgresVersion: 1600
+      sslmode: disable
+      timescaledb: true
+    secureJsonData:
+      password: $TWIN_DB_PASSWORD

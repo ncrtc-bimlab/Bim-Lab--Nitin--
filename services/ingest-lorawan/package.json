@@ -1,0 +1,25 @@
+{
+  "name": "twin-ingest-lorawan",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/main.js",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "ioredis": "^5.6.1",
+    "kafkajs": "^2.2.4",
+    "mqtt": "^5.10.4",
+    "pg": "^8.13.1",
+    "pino": "^9.6.0",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.10",
+    "@types/pg": "^8.11.11",
+    "typescript": "^5.8.2",
+    "vitest": "^5.1.0"
+  }
+}

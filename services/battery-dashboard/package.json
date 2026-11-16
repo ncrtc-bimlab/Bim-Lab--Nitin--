@@ -1,0 +1,17 @@
+{
+  "name": "twin-battery-dashboard",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "exceljs": "^4.4.0",
+    "pg": "^8.13.1"
+  },
+  "overrides": {
+    "uuid": "^11.1.1"
+  }
+}

@@ -1,0 +1,133 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "twin-timescaledb"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "showPoints": "never"
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull",
+            "min",
+            "max"
+          ],
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "twin-timescaledb"
+          },
+          "format": "time_series",
+          "rawSql": "SELECT $__timeGroupAlias(ts, '1m'), metric AS metric, AVG(value) AS value FROM readings WHERE $__timeFilter(ts) AND device_id IN (${device:sqlstring}) AND metric IN (${metric:sqlstring}) GROUP BY 1, metric ORDER BY 1",
+          "refId": "A"
+        }
+      ],
+      "title": "LoRaWAN readings",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "10s",
+  "schemaVersion": 39,
+  "templating": {
+    "list": [
+      {
+        "current": {},
+        "datasource": {
+          "type": "postgres",
+          "uid": "twin-timescaledb"
+        },
+        "definition": "SELECT device_id AS __text, device_id AS __value FROM devices WHERE enabled = TRUE ORDER BY device_id",
+        "hide": 0,
+        "includeAll": false,
+        "label": "Device",
+        "multi": false,
+        "name": "device",
+        "options": [],
+        "query": "SELECT device_id AS __text, device_id AS __value FROM devices WHERE enabled = TRUE ORDER BY device_id",
+        "refresh": 1,
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "current": {},
+        "datasource": {
+          "type": "postgres",
+          "uid": "twin-timescaledb"
+        },
+        "definition": "SELECT DISTINCT metric AS __text, metric AS __value FROM readings WHERE device_id IN (${device:sqlstring}) ORDER BY metric",
+        "hide": 0,
+        "includeAll": false,
+        "label": "Metric",
+        "multi": false,
+        "name": "metric",
+        "options": [],
+        "query": "SELECT DISTINCT metric AS __text, metric AS __value FROM readings WHERE device_id IN (${device:sqlstring}) ORDER BY metric",
+        "refresh": 2,
+        "sort": 1,
+        "type": "query"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-24h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "Asia/Kolkata",
+  "title": "IoT Digital Twin - LoRaWAN",
+  "uid": "twin-lorawan",
+  "version": 1,
+  "weekStart": ""
+}

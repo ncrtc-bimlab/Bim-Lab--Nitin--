@@ -1,0 +1,512 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#132d46">
+    <title>Sensor details | IoT Digital Twin</title>
+    <style>
+      :root {
+        color-scheme: light;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: #17212b;
+        background: #f3f6fa;
+        font-synthesis: none;
+        text-rendering: optimizeLegibility;
+      }
+      * { box-sizing: border-box; }
+      body { min-width: 0; margin: 0; }
+      .topbar { color: #fff; background: #132d46; }
+      .topbar-inner { display: flex; align-items: center; justify-content: space-between; gap: 16px; width: min(100%, 1480px); margin: 0 auto; padding: 18px 16px; }
+      .brand { display: flex; align-items: center; gap: 11px; min-width: 0; }
+      .brand-mark { display: grid; flex: 0 0 38px; width: 38px; height: 38px; place-items: center; border: 1px solid #ffffff3b; border-radius: 11px; color: #d7edff; font-size: 15px; font-weight: 800; }
+      .brand-name { font-size: 14px; font-weight: 700; letter-spacing: .01em; }
+      .brand-caption { margin-top: 3px; color: #bfd0df; font-size: 12px; }
+      .top-actions { display: flex; align-items: center; gap: 9px; }
+      .top-button, .back-link { display: inline-flex; min-height: 40px; align-items: center; justify-content: center; gap: 8px; border: 1px solid #ffffff3b; border-radius: 8px; padding: 8px 12px; color: #fff; background: #ffffff0d; font: inherit; font-size: 13px; font-weight: 650; text-decoration: none; }
+      .top-button { cursor: pointer; }
+      .top-button:hover, .back-link:hover { background: #ffffff1b; }
+      main { width: min(100%, 1480px); margin: 0 auto; padding: 20px 12px 40px; }
+      .breadcrumb { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; color: #77889a; font-size: 12px; }
+      .breadcrumb a { color: #356a9e; text-decoration: none; }
+      .breadcrumb a:hover { text-decoration: underline; }
+      .hero { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; margin-bottom: 20px; }
+      .hero-title { display: flex; align-items: center; gap: 12px; min-width: 0; }
+      .sensor-icon { display: grid; flex: 0 0 46px; width: 46px; height: 46px; place-items: center; border-radius: 13px; color: #145da0; background: #e2effb; font-size: 22px; }
+      h1 { margin: 0; font-size: clamp(22px, 5vw, 31px); line-height: 1.15; overflow-wrap: anywhere; }
+      .subtitle { margin: 6px 0 0; color: #687b8f; font-size: 13px; }
+      .protocol { display: inline-flex; align-items: center; border: 1px solid #d5e4f2; border-radius: 999px; padding: 6px 10px; color: #245c8d; background: #edf5fc; font-size: 11px; font-weight: 750; letter-spacing: .045em; white-space: nowrap; }
+      .layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
+      .layout > *, .side-column { min-width: 0; }
+      .panel { min-width: 0; overflow: hidden; border: 1px solid #e0e7ef; border-radius: 12px; background: #fff; box-shadow: 0 3px 12px #20354a0a; }
+      .panel-heading { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 16px; border-bottom: 1px solid #e9eef3; }
+      .panel-heading h2 { margin: 0; font-size: 15px; }
+      .panel-heading p { margin: 4px 0 0; color: #75879a; font-size: 12px; line-height: 1.45; }
+      .overview { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-bottom: 16px; }
+      .stat { min-width: 0; padding: 14px; border: 1px solid #e0e7ef; border-radius: 11px; background: #fff; }
+      .stat-label { display: flex; align-items: center; gap: 7px; color: #697b8e; font-size: 11px; font-weight: 650; }
+      .stat-value { display: block; margin-top: 9px; font-size: clamp(17px, 4vw, 22px); font-weight: 750; line-height: 1.2; overflow-wrap: anywhere; }
+      .stat-note { display: block; margin-top: 5px; color: #8392a1; font-size: 11px; line-height: 1.45; }
+      .state { display: inline-flex; align-items: center; gap: 7px; font-size: 13px; }
+      .state-dot { width: 8px; height: 8px; flex: 0 0 8px; border-radius: 50%; background: #1d9665; }
+      .state.offline .state-dot { background: #d04444; }
+      .state.unknown .state-dot { background: #9aa8b6; }
+      .description { padding: 16px; color: #506276; font-size: 13px; line-height: 1.6; overflow-wrap: anywhere; }
+      .details-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0; margin: 0; padding: 0 16px 8px; }
+      .detail-item { min-width: 0; padding: 10px 8px 12px 0; border-top: 1px solid #edf1f5; }
+      .detail-item dt { color: #7b8b9b; font-size: 10px; font-weight: 700; letter-spacing: .045em; text-transform: uppercase; }
+      .detail-item dd { margin: 5px 0 0; color: #26394b; font-size: 13px; font-weight: 600; overflow-wrap: anywhere; }
+      .charts-heading { align-items: flex-start; flex-wrap: wrap; }
+      .range-select { width: auto; min-width: 110px; min-height: 38px; border: 1px solid #cbd6e1; border-radius: 7px; padding: 7px 10px; color: #26394b; background: #fff; font: inherit; font-size: 12px; }
+      .charts { display: grid; gap: 12px; padding: 14px; }
+      .chart-card { min-width: 0; overflow: hidden; border: 1px solid #e7edf3; border-radius: 10px; background: #fff; }
+      .chart-title-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 13px 14px 0; }
+      .chart-title { margin: 0; color: #526579; font-size: 12px; font-weight: 700; overflow-wrap: anywhere; }
+      .chart-current { color: #172f46; font-size: 16px; font-weight: 750; white-space: nowrap; }
+      .chart-unit { color: #8593a1; font-size: 10px; font-weight: 500; }
+      .chart-wrap { width: 100%; padding: 8px 10px 5px; }
+      svg.chart { display: block; width: 100%; height: auto; min-height: 150px; overflow: visible; }
+      .chart-grid { stroke: #e9eef3; stroke-width: 1; }
+      .chart-line { fill: none; stroke: #3478b7; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+      .chart-area { fill: #3478b7; opacity: .09; }
+      .chart-point { fill: #fff; stroke: #3478b7; stroke-width: 2; }
+      .chart-label { fill: #8392a1; font-family: inherit; font-size: 10px; }
+      .empty-chart { display: grid; min-height: 170px; place-items: center; padding: 24px; color: #75879a; font-size: 13px; text-align: center; line-height: 1.5; }
+      .data-wrap { width: 100%; }
+      .data-table { width: 100%; border-collapse: collapse; text-align: left; }
+      .data-table th, .data-table td { padding: 12px 14px; border-bottom: 1px solid #edf1f5; }
+      .data-table th { color: #738498; background: #f9fbfd; font-size: 10px; letter-spacing: .045em; text-transform: uppercase; }
+      .data-table td { color: #34485b; font-size: 12px; overflow-wrap: anywhere; }
+      .data-table tr:last-child td { border-bottom: 0; }
+      .no-data { padding: 24px 16px; color: #75879a; font-size: 13px; text-align: center; line-height: 1.5; }
+      .loading, .error { padding: 24px 16px; border: 1px solid #e0e7ef; border-radius: 12px; background: #fff; color: #607286; font-size: 14px; }
+      .error { color: #9b3535; }
+      .error a { color: #145da0; }
+      button:focus-visible, select:focus-visible, a:focus-visible { outline: 3px solid #69aef0; outline-offset: 2px; }
+      @media (min-width: 560px) {
+        .topbar-inner { padding: 18px 24px; }
+        main { padding: 24px 20px 44px; }
+        .overview { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 18px; }
+        .stat { padding: 16px; }
+        .details-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        .charts { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; padding: 16px; }
+      }
+      @media (min-width: 900px) {
+        .topbar-inner { padding-right: max(28px, calc((100vw - 1400px) / 2)); padding-left: max(28px, calc((100vw - 1400px) / 2)); }
+        main { padding-right: 28px; padding-left: 28px; }
+        .layout { grid-template-columns: minmax(270px, .34fr) minmax(0, .66fr); align-items: start; gap: 18px; }
+        .side-column { display: grid; gap: 16px; }
+        .charts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .details-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      }
+      @media (min-width: 1280px) {
+        .layout { grid-template-columns: minmax(300px, .31fr) minmax(0, .69fr); gap: 20px; }
+        .overview { margin-bottom: 20px; }
+        .charts { padding: 18px; }
+      }
+      @media (min-width: 1600px) {
+        :root { font-size: 17px; }
+        .topbar-inner { width: min(100%, 3200px); padding: 24px clamp(40px, 3vw, 88px); }
+        .brand-mark { flex-basis: 48px; width: 48px; height: 48px; font-size: 18px; }
+        .brand-name { font-size: 17px; }
+        .brand-caption { font-size: 14px; }
+        .top-button, .back-link { min-height: 48px; padding: 10px 16px; font-size: 15px; }
+        main { width: min(100%, 3200px); padding: 34px clamp(40px, 3vw, 88px) 72px; }
+        .breadcrumb { margin-bottom: 22px; font-size: 14px; }
+        .hero { margin-bottom: 26px; }
+        .sensor-icon { flex-basis: 58px; width: 58px; height: 58px; font-size: 27px; }
+        h1 { font-size: clamp(34px, 2vw, 48px); }
+        .subtitle { font-size: 16px; }
+        .protocol { padding: 8px 14px; font-size: 13px; }
+        .overview { gap: 18px; margin-bottom: 24px; }
+        .stat { padding: 22px 24px; }
+        .stat-label { font-size: 14px; }
+        .stat-value { margin-top: 12px; font-size: clamp(25px, 1.4vw, 34px); }
+        .stat-note { font-size: 13px; }
+        .layout { grid-template-columns: minmax(420px, .28fr) minmax(0, .72fr); gap: 22px; }
+        .panel-heading { padding: 22px 24px; }
+        .panel-heading h2 { font-size: 19px; }
+        .panel-heading p { font-size: 14px; }
+        .description { padding: 22px 24px; font-size: 16px; }
+        .details-grid { padding: 0 24px 12px; }
+        .detail-item { padding: 14px 10px 16px 0; }
+        .detail-item dt { font-size: 12px; }
+        .detail-item dd { font-size: 15px; }
+        .charts { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; padding: 22px; }
+        .chart-title-row { padding: 18px 20px 0; }
+        .chart-title { font-size: 15px; }
+        .chart-current { font-size: 20px; }
+        .chart-unit { font-size: 12px; }
+        .chart-wrap { padding: 14px 16px 10px; }
+        svg.chart { min-height: 240px; }
+        .chart-label { font-size: 11px; }
+        .data-table th, .data-table td { padding: 16px 20px; }
+        .data-table th { font-size: 12px; }
+        .data-table td { font-size: 14px; }
+      }
+      @media (min-width: 2800px) {
+        :root { font-size: 18px; }
+        .layout { grid-template-columns: minmax(480px, .27fr) minmax(0, .73fr); gap: 28px; }
+        .charts { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; padding: 26px; }
+        svg.chart { min-height: 280px; }
+      }
+      @media (max-width: 380px) {
+        .brand-caption { display: none; }
+        .topbar-inner { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; padding-right: 12px; padding-left: 12px; }
+        .brand-name { white-space: nowrap; }
+        .top-actions { justify-content: space-between; }
+        main { padding-right: 10px; padding-left: 10px; }
+        .top-button, .back-link { min-height: 38px; padding: 7px 9px; font-size: 12px; }
+        .hero { flex-wrap: wrap; gap: 10px; }
+        .hero-title { flex: 1 1 100%; }
+        .protocol { margin-left: 58px; }
+        .stat { padding: 12px 10px; }
+        .stat-label { font-size: 10px; }
+      }
+      @media (prefers-reduced-motion: no-preference) {
+        .back-link, .top-button, .range-select { transition: background-color 120ms ease, border-color 120ms ease; }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="topbar-inner">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">DT</div>
+          <div>
+            <div class="brand-name">IoT Digital Twin</div>
+            <div class="brand-caption">Sensor operations</div>
+          </div>
+        </div>
+        <div class="top-actions">
+          <a class="back-link" href="/">← <span>All sensors</span></a>
+          <button class="top-button" id="refresh" type="button">↻ <span>Refresh</span></button>
+        </div>
+      </div>
+    </header>
+    <main>
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/">Sensors</a><span aria-hidden="true">/</span><span id="breadcrumb-asset">Asset details</span>
+      </nav>
+      <div id="content" class="loading" role="status">Loading sensor details…</div>
+    </main>
+    <template id="details-template">
+      <div class="hero">
+        <div class="hero-title">
+          <div class="sensor-icon" aria-hidden="true">⌁</div>
+          <div>
+            <h1 id="asset-title">—</h1>
+            <p class="subtitle" id="asset-subtitle">Sensor asset details</p>
+          </div>
+        </div>
+        <span class="protocol" id="asset-protocol">—</span>
+      </div>
+      <section class="overview" aria-label="Sensor overview">
+        <article class="stat">
+          <span class="stat-label">Connection status</span>
+          <strong class="stat-value" id="asset-status">—</strong>
+          <span class="stat-note">Based on last reported telemetry</span>
+        </article>
+        <article class="stat">
+          <span class="stat-label">Last uplink</span>
+          <strong class="stat-value" id="asset-last-uplink">—</strong>
+          <span class="stat-note" id="asset-last-relative">Latest stored data</span>
+        </article>
+        <article class="stat">
+          <span class="stat-label">Battery</span>
+          <strong class="stat-value" id="asset-battery">—</strong>
+          <span class="stat-note" id="asset-battery-note">Reported battery data</span>
+        </article>
+        <article class="stat">
+          <span class="stat-label">Metrics with saved values</span>
+          <strong class="stat-value" id="asset-metric-count">—</strong>
+          <span class="stat-note">Decoded values saved</span>
+        </article>
+      </section>
+      <div class="layout">
+        <div class="side-column">
+          <section class="panel">
+            <div class="panel-heading"><div><h2>Asset description</h2><p>Registered device and assignment details</p></div></div>
+            <div class="description" id="asset-description"></div>
+            <dl class="details-grid">
+              <div class="detail-item"><dt>Assigned Asset Id</dt><dd id="detail-id">—</dd></div>
+              <div class="detail-item"><dt>Device model</dt><dd id="detail-model">—</dd></div>
+              <div class="detail-item"><dt>Protocol</dt><dd id="detail-protocol">—</dd></div>
+              <div class="detail-item"><dt>Description</dt><dd id="detail-description">—</dd></div>
+              <div class="detail-item"><dt>Expected uplink</dt><dd id="detail-interval">—</dd></div>
+              <div class="detail-item"><dt>Battery metric</dt><dd id="detail-battery-metric">—</dd></div>
+            </dl>
+          </section>
+          <section class="panel">
+            <div class="panel-heading"><div><h2>Latest uplink data</h2><p>Most recent stored value for each metric</p></div></div>
+            <div class="data-wrap" id="latest-data"></div>
+          </section>
+        </div>
+        <section class="panel">
+          <div class="panel-heading charts-heading">
+            <div><h2>Telemetry history</h2><p>Recent readings by metric</p></div>
+            <label>
+              <span class="sr-only">Chart time range</span>
+              <select id="range" class="range-select" aria-label="Chart time range">
+                <option value="24h">Last 24 hours</option>
+                <option value="7d">Last 7 days</option>
+                <option value="30d">Last 30 days</option>
+              </select>
+            </label>
+          </div>
+          <div class="charts" id="charts" aria-live="polite"></div>
+        </section>
+      </div>
+    </template>
+    <script>
+      const content = document.querySelector("#content");
+      const assetId = decodeURIComponent(window.location.pathname.slice("/sensors/".length));
+      const refreshButton = document.querySelector("#refresh");
+      const missingValue = "—";
+
+      function formatDate(value) {
+        if (!value) return missingValue;
+        const date = new Date(value);
+        return Number.isNaN(date.getTime()) ? missingValue : date.toLocaleString();
+      }
+
+      function formatValue(value) {
+        return typeof value === "number" && Number.isFinite(value)
+          ? new Intl.NumberFormat(undefined, { maximumFractionDigits: 3 }).format(value)
+          : missingValue;
+      }
+
+      function relativeTime(value) {
+        if (!value) return "No uplinks recorded";
+        const elapsed = Math.max(0, Date.now() - new Date(value).getTime());
+        const minutes = Math.floor(elapsed / 60_000);
+        if (minutes < 1) return "Just now";
+        if (minutes < 60) return `${minutes} minute${minutes === 1 ? "" : "s"} ago`;
+        const hours = Math.floor(minutes / 60);
+        if (hours < 24) return `${hours} hour${hours === 1 ? "" : "s"} ago`;
+        const days = Math.floor(hours / 24);
+        return `${days} day${days === 1 ? "" : "s"} ago`;
+      }
+
+      function appendCell(row, value, label) {
+        const cell = document.createElement("td");
+        cell.textContent = value;
+        cell.dataset.label = label;
+        row.append(cell);
+      }
+
+      function drawLatestData(rows) {
+        const target = document.querySelector("#latest-data");
+        if (rows.length === 0) {
+          target.innerHTML = "";
+          const empty = document.createElement("div");
+          empty.className = "no-data";
+          empty.textContent = "No telemetry data has been stored for this asset yet.";
+          target.append(empty);
+          return;
+        }
+
+        const table = document.createElement("table");
+        table.className = "data-table";
+        const head = document.createElement("thead");
+        const heading = document.createElement("tr");
+        for (const label of ["Metric", "Value", "Reported at"]) {
+          const cell = document.createElement("th");
+          cell.textContent = label;
+          heading.append(cell);
+        }
+        head.append(heading);
+        const body = document.createElement("tbody");
+        for (const item of rows) {
+          const row = document.createElement("tr");
+          appendCell(row, item.metric, "Metric");
+          appendCell(row, formatValue(item.value), "Value");
+          appendCell(row, formatDate(item.ts), "Reported at");
+          body.append(row);
+        }
+        table.append(head, body);
+        target.replaceChildren(table);
+      }
+
+      function drawEmptyChart(message) {
+        const empty = document.createElement("div");
+        empty.className = "empty-chart";
+        empty.textContent = message;
+        document.querySelector("#charts").replaceChildren(empty);
+      }
+
+      function svgElement(tag, attributes = {}) {
+        const node = document.createElementNS("http://www.w3.org/2000/svg", tag);
+        for (const [key, value] of Object.entries(attributes)) node.setAttribute(key, value);
+        return node;
+      }
+
+      function makeChart(series) {
+        const card = document.createElement("article");
+        card.className = "chart-card";
+        const latest = series.points.at(-1);
+        const titleRow = document.createElement("div");
+        titleRow.className = "chart-title-row";
+        const title = document.createElement("h3");
+        title.className = "chart-title";
+        title.textContent = series.metric;
+        const value = document.createElement("div");
+        value.className = "chart-current";
+        value.append(document.createTextNode(formatValue(latest.value)));
+        const unit = document.createElement("span");
+        unit.className = "chart-unit";
+        unit.textContent = `  ·  ${series.points.length} points`;
+        value.append(unit);
+        titleRow.append(title, value);
+
+        const wrap = document.createElement("div");
+        wrap.className = "chart-wrap";
+        const width = 720;
+        const height = 220;
+        const left = 58;
+        const right = 18;
+        const top = 14;
+        const bottom = 34;
+        const graphWidth = width - left - right;
+        const graphHeight = height - top - bottom;
+        const values = series.points.map((point) => point.value);
+        const low = Math.min(...values);
+        const high = Math.max(...values);
+        const spread = high - low;
+        const isPercentage = /percent|pct|%/i.test(series.metric);
+        const padding = spread === 0 ? Math.max(Math.abs(high) * .05, 1) : spread * .12;
+        const min = isPercentage ? 0 : low - padding;
+        const max = isPercentage ? 100 : high + padding;
+        const points = series.points.map((point, index) => {
+          const x = left + (series.points.length === 1 ? graphWidth / 2 : index * graphWidth / (series.points.length - 1));
+          const y = top + (max - point.value) * graphHeight / (max - min);
+          return { x, y, point };
+        });
+        const svg = svgElement("svg", {
+          class: "chart",
+          viewBox: `0 0 ${width} ${height}`,
+          role: "img",
+          "aria-label": `${series.metric} history, latest value ${formatValue(latest.value)}`,
+        });
+
+        for (let index = 0; index <= 4; index += 1) {
+          const y = top + index * graphHeight / 4;
+          const axisValue = max - index * (max - min) / 4;
+          svg.append(svgElement("line", { x1: left, y1: y, x2: width - right, y2: y, class: "chart-grid" }));
+          const label = svgElement("text", { x: left - 8, y: y + 4, "text-anchor": "end", class: "chart-label" });
+          label.textContent = formatValue(axisValue);
+          svg.append(label);
+        }
+
+        const linePoints = points.map((point) => `${point.x},${point.y}`).join(" ");
+        const areaPoints = `${left},${top + graphHeight} ${linePoints} ${left + graphWidth},${top + graphHeight}`;
+        svg.append(svgElement("polygon", { points: areaPoints, class: "chart-area" }));
+        svg.append(svgElement("polyline", { points: linePoints, class: "chart-line" }));
+        for (const point of [points[0], points.at(-1)]) {
+          const marker = svgElement("circle", { cx: point.x, cy: point.y, r: 4, class: "chart-point" });
+          const markerTitle = svgElement("title");
+          markerTitle.textContent = `${formatDate(point.point.ts)} · ${formatValue(point.point.value)}`;
+          marker.append(markerTitle);
+          svg.append(marker);
+        }
+
+        const labelIndexes = new Set([0, Math.floor((points.length - 1) / 2), points.length - 1]);
+        for (const index of labelIndexes) {
+          const point = points[index];
+          const label = svgElement("text", {
+            x: point.x,
+            y: height - 8,
+            "text-anchor": index === 0 ? "start" : index === points.length - 1 ? "end" : "middle",
+            class: "chart-label",
+          });
+          label.textContent = new Date(point.point.ts).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+          svg.append(label);
+        }
+        wrap.append(svg);
+        card.append(titleRow, wrap);
+        return card;
+      }
+
+      function renderDetails(data) {
+        const fragment = document.querySelector("#details-template").content.cloneNode(true);
+        content.className = "";
+        content.replaceChildren(fragment);
+        const sensor = data.sensor;
+        document.querySelector("#range").value = data.rangeHours === 24 ? "24h" : data.rangeHours === 168 ? "7d" : "30d";
+        document.title = `${sensor.sensorName} | Sensor details`;
+        document.querySelector("#breadcrumb-asset").textContent = sensor.sensorName;
+        document.querySelector("#asset-title").textContent = sensor.sensorName;
+        document.querySelector("#asset-subtitle").textContent = sensor.model ?? "Sensor asset";
+        document.querySelector("#asset-protocol").textContent = sensor.protocol.toUpperCase();
+        document.querySelector("#asset-description").textContent = data.description;
+
+        const status = document.querySelector("#asset-status");
+        status.className = `stat-value state${sensor.isOffline ? " offline" : sensor.lastSeen ? "" : " unknown"}`;
+        const dot = document.createElement("span");
+        dot.className = "state-dot";
+        status.replaceChildren(dot, document.createTextNode(sensor.isOffline ? "Not answering" : sensor.lastSeen ? "Online" : "No data"));
+
+        document.querySelector("#asset-last-uplink").textContent = relativeTime(sensor.lastSeen);
+        document.querySelector("#asset-last-relative").textContent = formatDate(sensor.lastSeen);
+        document.querySelector("#asset-battery").textContent = sensor.batteryPercent === null
+          ? sensor.isOffline ? "0% · Offline" : "Not reported"
+          : `${formatValue(sensor.batteryPercent)}%`;
+        document.querySelector("#asset-battery-note").textContent = sensor.batteryMetric
+          ? `${sensor.batteryMetric}: ${formatValue(sensor.batteryValue)}`
+          : "No battery metric in the latest report";
+        document.querySelector("#asset-metric-count").textContent = data.lastData.length;
+        document.querySelector("#detail-id").textContent = sensor.sensorName;
+        document.querySelector("#detail-model").textContent = sensor.model ?? missingValue;
+        document.querySelector("#detail-protocol").textContent = sensor.protocol.toUpperCase();
+        document.querySelector("#detail-description").textContent = sensor.description ?? missingValue;
+        document.querySelector("#detail-interval").textContent = sensor.expectedIntervalSeconds
+          ? `${sensor.expectedIntervalSeconds} seconds`
+          : "Not configured";
+        document.querySelector("#detail-battery-metric").textContent = sensor.batteryMetric ?? "Not reported";
+        drawLatestData(data.lastData);
+        renderCharts(data.series, data.rangeHours);
+      }
+
+      function renderCharts(series, rangeHours) {
+        const charts = document.querySelector("#charts");
+        if (!charts) return;
+        charts.replaceChildren();
+        if (series.length === 0) {
+          const rangeLabel = rangeHours === 24 ? "24-hour" : rangeHours === 168 ? "7-day" : "30-day";
+          drawEmptyChart(`No readings found in the selected ${rangeLabel} period. Try a wider range or check that the sensor has sent uplinks.`);
+          return;
+        }
+        for (const item of series) charts.append(makeChart(item));
+      }
+
+      async function loadDetails() {
+        refreshButton.disabled = true;
+        try {
+          const range = document.querySelector("#range")?.value ?? "24h";
+          const response = await fetch(`/api/sensors/${encodeURIComponent(assetId)}?range=${range}`, { cache: "no-store" });
+          const result = await response.json();
+          if (!response.ok) throw new Error(result.error ?? `Request failed (${response.status})`);
+          renderDetails(result);
+        } catch (error) {
+          content.className = "error";
+          content.setAttribute("role", "alert");
+          content.replaceChildren(document.createTextNode(`Unable to load sensor details: ${error.message} `));
+          const link = document.createElement("a");
+          link.href = "/";
+          link.textContent = "Return to all sensors";
+          content.append(link);
+        } finally {
+          refreshButton.disabled = false;
+        }
+      }
+
+      refreshButton.addEventListener("click", loadDetails);
+      content.addEventListener("change", (event) => {
+        if (event.target instanceof HTMLSelectElement && event.target.id === "range") {
+          loadDetails();
+        }
+      });
+      loadDetails();
+    </script>
+  </body>
+</html>

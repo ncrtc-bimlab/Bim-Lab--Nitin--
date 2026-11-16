@@ -1,0 +1,42 @@
+                                                                                      {
+  "deduplicationId": "sanitized-sample",
+  "time": "2026-11-05T10:17:42.784702135Z",
+  "deviceInfo": {
+    "tenantName": "ChirpStack",
+    "applicationName": "sample",
+    "deviceProfileName": "LDS-12-LWB",
+    "deviceName": "sample-device",
+    "devEui": "0123456789abcdef",
+    "deviceClassEnabled": "CLASS_A",
+    "tags": {}
+  },
+  "devAddr": "00000000",
+  "adr": true,
+  "dr": 5,
+  "fCnt": 80,
+  "fPort": 2,
+  "confirmed": false,
+  "data": "DWh//wj8BwkAHQE=",
+  "object": {
+    "Lidar_distance": 230.0,
+    "TempC_DS18B20": 3276.7,
+    "Bat": 3.432,
+    "Interrupt_level": "LOW",
+    "Message_type": 1.0,
+    "Lidar_signal": 1801.0,
+    "Interrupt_flag": "FALSE",
+    "Node_type": "LDS12-LB",
+    "Lidar_temp": 29.0
+  },
+  "rxInfo": [
+    {
+      "gatewayId": "0000000000000000",
+      "uplinkId": 12763,
+      "rssi": -16,
+      "snr": 13.8,
+      "channel": 1,
+      "crcStatus": "CRC_OK"
+    }
+  ],
+  "regionConfigId": "in865"
+}
